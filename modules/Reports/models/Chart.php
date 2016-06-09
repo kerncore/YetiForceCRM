@@ -462,8 +462,7 @@ class PieChart extends Base_Chart
 	function generateData()
 	{
 		$db = PearDatabase::getInstance();
-		$values = array();
-
+		$values = [];
 		$chartSQL = $this->getQuery();
 		$result = $db->pquery($chartSQL, array());
 		$rows = $db->num_rows($result);
@@ -471,13 +470,13 @@ class PieChart extends Base_Chart
 		$queryColumnsByFieldModel = $this->getQueryColumnsByFieldModel();
 		if (is_array($queryColumnsByFieldModel)) {
 			foreach ($queryColumnsByFieldModel as $field) {
-				$sector = strtolower($field->get('reportlabel'));
+				$sector = $field->get('reportlabel');
 				$sectorField = $field;
 			}
 		}
 
 		if ($this->isRecordCount()) {
-			$sector = strtolower('RECORD_COUNT');
+			$sector = 'RECORD_COUNT';
 		}
 
 		$groupByColumnsByFieldModel = $this->getGroupbyColumnsByFieldModel();
@@ -495,27 +494,26 @@ class PieChart extends Base_Chart
 		for ($i = 0; $i < $rows; $i++) {
 			$row = $db->query_result_rowdata($result, $i);
 			$value = (float) $row[$sector];
-
 			if (!$this->isRecordCount()) {
 				if ($sectorField) {
 					if ($sectorField->get('uitype') == '71' || $sectorField->get('uitype') == '72') { //convert currency fields
 						$value = (float) ($row[$sector]);
 						$value = CurrencyField::convertFromDollar($value, $currencyRateAndSymbol['rate']);
+					} elseif($sectorField->get('uitype') == '7') {
+						$value = (float) ($row[$sector]);
 					} else {
 						$value = (int) $sectorField->getDisplayValue($row[$sector]);
 					}
 				}
 			}
-
 			$values[] = $value;
-
 			//translate picklist and multiselect picklist values
 			if ($legendField) {
 				$fieldDataType = $legendField->getFieldDataType();
 				if ($fieldDataType == 'picklist') {
-					$label = vtranslate($row[strtolower($legend)], $legendField->getModuleName());
+					$label = vtranslate($row[$legend], $legendField->getModuleName());
 				} else if ($fieldDataType == 'multipicklist') {
-					$multiPicklistValue = $row[strtolower($legend)];
+					$multiPicklistValue = $row[$legend];
 					$multiPicklistValues = explode(' |##| ', $multiPicklistValue);
 					foreach ($multiPicklistValues as $multiPicklistValue) {
 						$labelList[] = vtranslate($multiPicklistValue, $legendField->getModuleName());
@@ -526,10 +524,10 @@ class PieChart extends Base_Chart
 				} else if ($fieldDataType == 'datetime') {
 					$label = Vtiger_Date_UIType::getDisplayDateTimeValue($row[strtolower($legendField->get('reportlabel'))]);
 				} else {
-					$label = $row[strtolower($legend)];
+					$label = $row[$legend];
 				}
 			} else {
-				$label = $row[strtolower($legend)];
+				$label = $row[$legend];
 			}
 			$labels[] = (strlen($label) > 30) ? substr($label, 0, 30) . '..' : $label;
 			$links[] = $this->generateLink($legendField->get('reportcolumninfo'), $row[strtolower($legend)]);
